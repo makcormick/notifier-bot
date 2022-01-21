@@ -6,6 +6,11 @@ require "rails/all"
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
+load 'telegram/utils.rb'
+
+include Utils
+Dotenv.load(".env_#{Rails.env}")
+
 module Notifier
   class Application < Rails::Application
     # Initialize configuration defaults for originally generated Rails version.
@@ -17,6 +22,8 @@ module Notifier
     # in config/environments, which are processed later.
     #
     # config.time_zone = "Central Time (US & Canada)"
-    # config.eager_load_paths << Rails.root.join("extras")
+    config.eager_load_paths << Rails.root.join('telegram')
+
+    config.i18n.available_locales = %i[en ru]
   end
 end

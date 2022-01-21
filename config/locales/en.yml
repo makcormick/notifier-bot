@@ -1,33 +1,85 @@
-# Files in the config/locales directory are used for internationalization
-# and are automatically loaded by Rails. If you want to use locales other
-# than English, add the necessary files in this directory.
-#
-# To use the locales, use `I18n.t`:
-#
-#     I18n.t 'hello'
-#
-# In views, this is aliased to just `t`:
-#
-#     <%= t('hello') %>
-#
-# To use a different locale, set it with `I18n.locale`:
-#
-#     I18n.locale = :es
-#
-# This would use the information in config/locales/es.yml.
-#
-# The following keys must be escaped otherwise they will not be retrieved by
-# the default I18n backend:
-#
-# true, false, on, off, yes, no
-#
-# Instead, surround them with single quotes.
-#
-# en:
-#   'true': 'foo'
-#
-# To learn more, please read the Rails Internationalization guide
-# available at https://guides.rubyonrails.org/i18n.html.
-
 en:
-  hello: "Hello world"
+  main_menu: 'Main menu:'
+  wallet_data: Wallet data
+  pool_data: Pool data
+  profit_calculating: Profit calculating
+  settings: Settings
+  notify_on: Notify on
+  notify_off: Notify off
+  change_time_zone: Change time zone
+  switch_language: Switch language EN/RU
+  set_wallet: Set wallet
+  back_to_main_menu: < Back to main menu
+  language_changed: Language was changed to english
+  start_notify: You will be notified about new solutions. Please enable notifications in your settings
+  already_notify: You already subscribed to notifications. We waiting for a new solution
+  stop_notify: 'Notifications were stopped'
+  unknown_error: Unknown error
+  change_tz_info: | 
+    Please type time zone offset in hours.
+    Like '+3' for Moscow Time UTC+3
+    or '-5' for New York Time UTC-5
+    Current: %{current}
+  type_wallet: Please type the wallet
+  add_wallet_in_settings: Please add wallet in settings
+  profit_calculating_info: |
+    Please type hashrate, start time, start balance, end time, end balance in next format:
+
+    Your hashrate (Gh/s)
+    Started at (day.month.year hours:minutes) - start balance (ton)
+    Ended at (day.month.year hours:minutes) - end balance (ton)
+
+    Like:
+    3.452
+    1.1.2022 1:1 - 2.2
+    1.1.2022 21:32 - 3.6754
+  invalid_tz: Time zone should be range between -12 and 13
+  tz_was_changed: Time zone offset was changed to %{time_zone} hours
+  wallet_was_added: Wallet was added
+  wrong_parameters: |
+    Wrong parameters. Should be like:
+    3.452
+    1.1.2022 1:1 - 2.2
+    1.1.2022 21:32 - 3.6754
+  lucky_day: 🌈 day
+  unlucky_day: 💩 day
+  lucky: 🌈
+  unlucky: 💩
+  last_solution_info: |
+    %{found_time_formatted} time of the last found solution
+    <a href='https://ton.sh/address/%{pool_wallet}'>Ton coin pool wallet</a>
+    <a href='https://ton.sh/address/%{giver_wallet}'>Giver wallet</a>
+    Solutions in this day: %{last_day_solutions_count} / %{expected_solutions_in_day_info} (%{solution_goal_info}%)
+
+    Statistics for the last 24 hours since the first solution in this interval
+    %{start_time_info} (%{start_time_words_info}):
+    Average network difficult: %{average_network_difficult_info} Ph (%{average_network_difficult_th_info} Th)
+    Average pool hashrate: %{average_pool_hashrate_info} Th/s
+    Pool mined: %{real_day_tons_info} (%{real_day_tons_usd_info}$), expected %{expected_day_tons_info}, %{luck_state_info}
+    Real profit per Gh: %{profit_info} tons (%{profit_usd_info}$)
+    Ton price: %{ton_price_info}
+# <a href='t.me/CryptoBot?start=IVr9jLl7RpXf'>Donate please in CryptoBot</a> or 
+# <a href='ton://transfer/EQAej9CEm_IgTpOFKkqwZSSQuUthWn-h2dtU1dx4BKlCaFJp'>on my wallet</a>:
+# EQAej9CEm_IgTpOFKkqwZSSQuUthWn-h2dtU1dx4BKlCaFJp
+  pool_data_info: |
+    Based on pool information (in current moment)
+    Pool hashrate: %{pool_hashrate_info} Th/s
+    Network difficult: %{network_difficult_info} PH
+    Last solution: %{last_challenge_solved_words_info} (%{last_challenge_solved_info})
+
+    Expected time to find a solution: %{hours_for_solution_words_info}
+    Expected count of solutions per day: %{solution_in_day_info} items
+    Expected daily rewards: %{daily_reward_info} tons (%{total_reward_info})
+    Luck of the current solution: %{current_luck_info} %{current_luck_status_info}
+    Expected daily profitability per 1 GH/s: %{profit_gh_info} tons (%{profit_gh_usd_info})
+    Ton price: %{ton_price_info} (in USD, from CoinGecko)
+  profit_stats: |
+    Hashrate: %{my_hashrate} Gh/s
+    Start at %{start_t_s} with balance %{start_balance} ton
+    End at %{end_t_s} with balance %{end_balance} ton
+
+    Time distance: %{time_distance}
+    Balance delta: %{balance_delta}
+    Ton in hour: %{real_tons_in_hour}
+    Ton in day: %{expected_tons_in_day}
+    Profit in day per gh: %{calculated_profit_in_day_for_gh} ton

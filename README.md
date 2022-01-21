@@ -22,3 +22,8 @@ Things you may want to cover:
 * Deployment instructions
 
 * ...
+
+start in dev mode: rake start
+start in prod mode: RAILS_ENV=production rake start
+run docker with external db: docker run -v /tmp/db.sqlite3:/myapp/db/development.sqlite3 image_id
+

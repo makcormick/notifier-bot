@@ -1,0 +1,11 @@
+# Open container bash
+bash:
+	docker exec -it notifier_test_1 bash
+
+# Run existing container
+start:
+	docker start notifier_test_1 -a
+
+# To create container from image firsttly
+run:
+	docker run --name notifier_test_1 -v /tg/db_compose.sqlite3:/myapp/db/development.sqlite3 image_id
