@@ -31,36 +31,58 @@ class BotRuner
       Sender.bot = bot
       ReplyPool.bot = bot
 
-      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT) do
-        Api::PoolInfo.fetch
+      Looper.new(:transaction_data).start(Transaction::SCAN_TIMEOUT) do
+        puts
+        Transaction.deep_scan
       end
 
-      Looper.new(:notifier).start do
+      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT) do
+        puts
+        Api::PoolInfo.fetch
+        Api::Price::Gecko.price
+      end
+
+      Looper.new(:notifier).start(Transaction::CHECK_TIMEOUT) do
+        puts
+        log("Check new solutions.. Memory 1-point #{GetProcessMem.new.mb}")
         next unless (solutions = Transaction.check_last_solutions)
 
-        log "Get price #{Api::Price::Gecko.price}"
         center_log 'Start users notify'
+        log "Ton price #{Api::Price::Gecko.current_price}"
+        log("Memory 2-point #{GetProcessMem.new.mb}")
+        real_24h_profit_data = Transaction.real_24h_profit
+
         solutions.each do |solution|
-          text = NotifyApi.last_giver_info(solution, time_zone: 3)
+          text = NotifyApi.last_giver_info(solution, time_zone: 3, real_24h_profit_data: real_24h_profit_data)
+          puts('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> New Solution')
           log text
+          puts('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         end
 
-        User.find_each do |user|
-          next unless user.notify_solution
+        log("Memory 3-point #{GetProcessMem.new.mb}")
+        User.notified.find_in_batches(batch_size: 10) do |users|
+          log("Memory 4-point start #{GetProcessMem.new.mb}")
+          threads = []
+          users.each do |user|
+            threads << Thread.new do
+              solutions.each do |solution|
+                ms_time = Benchmark.realtime do
+                  text = NotifyApi.last_giver_info(solution, user: user, real_24h_profit_data: real_24h_profit_data)
+                  Sender.send_message(user.tg_id, user.chat_id, text)
+                end
 
-          Thread.new do
-            solutions.each do |solution|
-              ms_time = Benchmark.realtime do
-                text = NotifyApi.last_giver_info(solution, user: user)
-                Sender.send_message(user.tg_id, user.chat_id, text, parse_mode: :html)
+                log "User notified #{user.tg_id} with #{ms_time} seconds"
               end
-
-              log "User notified #{user.tg_id} with #{ms_time} seconds"
             end
           end
+          threads.each(&:join)
+          log("Memory 4-point end #{GetProcessMem.new.mb}")
+          log("Sended for #{users.count} users")
+          sleep(0.3)
         end
 
-        center_log 'End of all user notify'
+        log("Memory end #{GetProcessMem.new.mb}")
+        center_log "End of all users (#{User.notified.count}) notify"
       end
 
       bot.listen do |message|

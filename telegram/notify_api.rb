@@ -6,7 +6,7 @@ class NotifyApi
   class << self
     attr_accessor :cache
 
-    def last_giver_info(transaction = Setting.last_transaction, user: nil, time_zone: 0)
+    def last_giver_info(transaction = Setting.last_transaction, user: nil, time_zone: 0, real_24h_profit_data: [])
       t_time = transaction.is_a?(Transaction) ? transaction.time : transaction['timestamp']
       giver = transaction.is_a?(Transaction) ? transaction.giver : transaction['giver']
 
@@ -16,11 +16,13 @@ class NotifyApi
       found_time_formatted = format_time(timestamp, time_zone: tz)
       last_day_solutions_count = Transaction.last_day_solutions_count_from(found_time)
 
-      average_pool_hashrate, average_network_difficult, real_day_tons, profit, solutions = Transaction.real_24h_profit
+      average_pool_hashrate, average_network_difficult, real_day_tons, profit,
+        solutions_last = real_24h_profit_data.presence || Transaction.real_24h_profit
+
       real_day_tons_usd = real_day_tons * ton_price
       profit_usd = profit * ton_price
       expected_solutions_in_day = 24.to_f * 3600 / (to_gh(average_network_difficult) / to_gh(average_pool_hashrate))
-      start_time = solutions.last.time
+      start_time = solutions_last.time
       expected_day_tons = expected_solutions_in_day * 100
 
       expected_solutions_in_day_info = expected_solutions_in_day.round(2)
@@ -74,7 +76,7 @@ class NotifyApi
 
       log "#{user.debug_user_info} request pool_data"
 
-      data_net = Api::PoolInfo.fetch
+      data_net = Api::PoolInfo.current_pool_info
       pool_hashrate = data_net.hashrate.to_f
       network_difficulty = data_net.n_difficult.to_f
       network_difficult = to_ph(network_difficulty)
@@ -125,7 +127,7 @@ class NotifyApi
     private
 
     def ton_price
-      Api::Price::Gecko.price
+      Api::Price::Gecko.current_price
     end
   end
 end

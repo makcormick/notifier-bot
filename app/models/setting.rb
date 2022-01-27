@@ -3,10 +3,10 @@
 class Setting < ApplicationRecord
   serialize :last_transaction
 
-  def self.sync(num = 0)
+  def self.sync(num = 1)
     Transaction.next_sync_time = nil
-    transaction = Transaction.deep_scan[num]
-    self.last_transaction = transaction
+    Transaction.deep_scan
+    self.last_transaction = Transaction.first(num).last
   end
 
   def self.last_transaction

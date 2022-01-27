@@ -17,6 +17,10 @@ module Api
           self.cached_price = request_price
         end
 
+        def current_price
+          cached_price.presence || price
+        end
+
         private
 
         def set_new_last_price_request_time

@@ -3,6 +3,9 @@
 class Transaction < ApplicationRecord
   extend HistoryStore
 
+  SCAN_TIMEOUT = 1
+  CHECK_TIMEOUT = 1.1
+
   belongs_to :pool
 
   default_scope { order(time: :desc) }

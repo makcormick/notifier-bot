@@ -3,7 +3,7 @@
 module Api
   class PoolInfo
     POOL_INFO_URL = 'https://pplns.toncoinpool.io/api/v1/public/network'
-    REQUEST_POOL_TIMEOUT = 2
+    REQUEST_POOL_TIMEOUT = 2.5
 
     class << self
       attr_accessor :cache, :last_request_time
@@ -23,6 +23,10 @@ module Api
         log e.backtrace
         log 'Error in fetch pool info'
         Pool.last_pool_data
+      end
+
+      def current_pool_info
+        cache || fetch
       end
     end
   end

@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
 module HistoryStore
-  attr_accessor :store, :next_sync_time, :trans_cache
+  attr_accessor :next_sync_time, :trans_cache
 
   TRANS_BASE = 'https://api.ton.sh/getTransactions'
   POOL_WALLET = 'EQCUp88072pLUGNQCXXXDFJM3C5v9GXTjV7ou33Mj3r0Xv2W'
   MAX_SCAN_LEVEL = 40
   SYNC_PERIOD_TIME = 0.9
-  MAX_STORE_SIZE = 600
 
   def check_last_solutions
     new_searched_solutions = get_new_solutions_from(Setting.last_transaction['hash'])
@@ -21,69 +20,57 @@ module HistoryStore
   def resync
     destroy_all
     self.next_sync_time = nil
-    self.store = []
     deep_scan
     Setting.sync
   end
 
   def get_new_solutions_from(hash_of_last_transaction)
-    scan_result = deep_scan
+    transaction = Transaction.find_by(t_hash: hash_of_last_transaction)
+    return [Transaction.first] if transaction.blank?
 
-    return if scan_result.blank?
-
-    index_of_last_notified_transaction = scan_result.index { _1.t_hash == hash_of_last_transaction }
-    return [scan_result.first] if index_of_last_notified_transaction.blank?
-
-    return if index_of_last_notified_transaction.zero?
-
-    scan_result[0...index_of_last_notified_transaction].reverse
+    Transaction.where('time > ?', transaction.time).reverse
   end
 
   def real_24h_profit
     solutions = last_24h_solutions
-    real_day_tons = (solutions.size * 100).to_f
-    average_pool_hashrate = solutions.map { _1.pool.hashrate.to_i }.sum / solutions.count
-    average_network_difficult = solutions.map { _1.pool.n_difficult.to_i }.sum / solutions.count
+    solutions_count = solutions.count
+    real_day_tons = (solutions_count * 100).to_f
+    average_pool_hashrate = solutions.joins(:pool).average('pools.hashrate').to_i
+    average_network_difficult = solutions.joins(:pool).average('pools.n_difficult').to_i
     profit = real_day_tons / to_gh(average_pool_hashrate)
-    [average_pool_hashrate, average_network_difficult, real_day_tons, profit, solutions]
+    [average_pool_hashrate, average_network_difficult, real_day_tons, profit, solutions.last]
   end
 
   def last_24h_solutions
-    time = Time.now - 24.hours
-    @store.select { _1.time >= time }
+    Transaction.where('time > ?', Time.now - 24.hours)
   end
 
   def last_day_solutions_from(from_time = Time.now.utc, time_zone: nil)
     time = time_zone ? from_time.in_time_zone(time_zone) : from_time
-    @store.select { _1.time >= time.beginning_of_day && _1.time <= time }
+    Transaction.where('time >= ? AND time <= ?', time.beginning_of_day, time)
   end
 
   def last_day_solutions_count_from(from_time = Time.now.utc, time_zone: nil)
-    last_day_solutions_from(from_time, time_zone: time_zone).size
+    last_day_solutions_from(from_time, time_zone: time_zone).count
   end
 
   def deep_scan(next_page_url = nil, level = 1)
-    if level == 1
-      @store = Transaction.first(MAX_STORE_SIZE) if @store.blank?
-      @store = @store[0...MAX_STORE_SIZE] if @store.size > MAX_STORE_SIZE
-      @trans_cache = []
-    end
+    @trans_cache = [] if level == 1
 
     current_time = Time.now
 
     if next_sync_time && next_sync_time > current_time
       log("Waiting for reloading history. Next allowed at #{format_time(next_sync_time)}\n"\
           "Next after: #{just_time(current_time - (next_sync_time - current_time))}")
-      return @store
+      return
     end
 
-    pool_info = Api::PoolInfo.fetch
+    pool_info = Api::PoolInfo.current_pool_info
     if level > MAX_SCAN_LEVEL
       log "End of scan transaction. Level scan is #{MAX_SCAN_LEVEL}"
       @trans_cache.reverse.each { Transaction.from_data(_1, pool_info) }
-      @store = Transaction.first(MAX_STORE_SIZE)
       self.next_sync_time = current_time + SYNC_PERIOD_TIME.minutes
-      return @store
+      return
     end
 
     trans = handle do
@@ -95,17 +82,18 @@ module HistoryStore
       data
     end
 
+    first_transaction = Transaction.first
     @trans_cache += trans['result'].select { _1['received']['nanoton'] == 10**11 }
-    index_of_transaction = @trans_cache.index(@trans_cache.find { _1['hash'] == @store.first&.t_hash })
+    index_of_transaction = @trans_cache.index(@trans_cache.find { _1['hash'] == first_transaction&.t_hash })
 
     if index_of_transaction
-      log("End scan #{@store.first.t_hash}")
+      log("End scan #{first_transaction.t_hash}")
       self.next_sync_time = current_time + SYNC_PERIOD_TIME.minutes
 
-      return @store if index_of_transaction.zero?
+      return if index_of_transaction.zero?
 
       @trans_cache[0...index_of_transaction].reverse.each { Transaction.from_data(_1, pool_info) }
-      return @store = Transaction.first(MAX_STORE_SIZE)
+      return
     end
 
     uri = URI(TRANS_BASE)
@@ -117,6 +105,5 @@ module HistoryStore
     log e.message
     log e.backtrace
     log 'Error in get transaction'
-    @store
   end
 end

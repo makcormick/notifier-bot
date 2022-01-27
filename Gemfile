@@ -15,6 +15,7 @@ end
 
 gem 'activesupport'
 gem 'dotenv'
+gem 'get_process_mem'
 gem 'nokogiri'
 gem 'pry'
 gem 'pry-nav'

@@ -28,11 +28,20 @@ class Sender
                "Остальные 666 NFT будут выданы случайным образом.\n"\
                "<a href='https://t.me/tonchinchibot?start=r0897749204'>Можно перейти по моей реферальной ссылке</a>"
 
+  OLD_TEXT_4 = "<b><u><a href='https://t.me/nftngio/4'>Что-то новенькое от команды toncoinpool.io… 🚀</a></u></b>\n\n"\
+               "<b>NFT NG</b> — Уникальные цифровые активы от ваших любимых разработчиков <u>toncoinpool.io</u>.\n"\
+               "<u>@nftngio</u> - следите за новостями! ❤️‍🔥\n\n\n"\
+               "<b><u><a href='https://t.me/nftngio/4'>Something new is coming from the toncoinpool.io team... 🚀</a>"\
+               "</u></b>\n\n"\
+               "<b>NFT NG</b> - unique digital assets project from your favourite <u>toncoinpool.io</u> devs.\n"\
+               "<u>@nftngio</u> - stay in touch! ❤️‍🔥\n"
+
   class << self
     attr_accessor :bot
 
     def send_message(user_id, chat_id, text, **args)
-      opts = { parse_mode: :html, chat_id: chat_id, text: text, disable_web_page_preview: true }.merge(args)
+      # opts = { parse_mode: :html, chat_id: chat_id, text: text, disable_web_page_preview: true }.merge(args)
+      opts = { parse_mode: :html, chat_id: chat_id, text: text }.merge!(args)
       bot.api.send_message(opts)
     rescue StandardError => e
       log("Sending message is blocking by the user #{User.find_by(tg_id: user_id).debug_user_info}\n"\
@@ -57,6 +66,30 @@ class Sender
             log "Send for #{user.debug_user_info}"
             send_message(user.tg_id, user.chat_id, text)
           end
+        end
+      end
+    end
+
+    def send_direct_message_to_specific_users(users, text)
+      Telegram::Bot::Client.run(Config.token) do |bot|
+        Sender.bot = bot
+
+        users.find_each do |user|
+          Thread.new do
+            log "Send for #{user.debug_user_info}"
+            send_message(user.tg_id, user.chat_id, text)
+          end
+        end
+      end
+    end
+
+    def send_direct_message_to_user(user_id, text)
+      Telegram::Bot::Client.run(Config.token) do |bot|
+        Sender.bot = bot
+        Thread.new do
+          user = User.find(user_id)
+          log "Send for #{user.debug_user_info}"
+          send_message(user.tg_id, user.chat_id, text)
         end
       end
     end

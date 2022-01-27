@@ -71,7 +71,8 @@ module Utils
       res = yield
       break
     rescue StandardError => e
-      log "Try ##{try_num + 1} with error. #{e.message.truncate(200)}"
+      log "Try ##{try_num + 1} with error. #{e.message.truncate(200)}\nFull message\n#{e.full_message.truncate(1200)}"
+      log e.backtrace.first(15).join("\n")
       log "Sleep 2 seconds\n********"
       sleep(2)
     end
@@ -85,5 +86,14 @@ module Utils
 
   def log(text)
     puts("#{format_time}: #{text}")
+  end
+
+  def mem_test
+    start_mb = GetProcessMem.new.mb
+    log("Memory start-point #{start_mb}")
+    yield
+    end_mb = GetProcessMem.new.mb
+    log("Memory end-point #{end_mb}")
+    log("Diff #{end_mb - start_mb}")
   end
 end

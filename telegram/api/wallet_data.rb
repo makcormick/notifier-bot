@@ -28,7 +28,7 @@ module Api
         end
 
         log "Wallet data for #{wallet}"
-        data_net = Api::PoolInfo.fetch
+        data_net = Api::PoolInfo.current_pool_info
         text = []
         pool_hashrate = data_net.hashrate.to_f
         network_difficulty = data_net.n_difficult.to_f
@@ -105,7 +105,7 @@ module Api
       private
 
       def ton_price
-        Api::Price::Gecko.price
+        Api::Price::Gecko.current_price
       end
 
       def expected_miner_profit(solution_in_day, pool_partition)
