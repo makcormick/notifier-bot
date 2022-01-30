@@ -40,8 +40,8 @@ class Sender
     attr_accessor :bot
 
     def send_message(user_id, chat_id, text, **args)
-      # opts = { parse_mode: :html, chat_id: chat_id, text: text, disable_web_page_preview: true }.merge(args)
-      opts = { parse_mode: :html, chat_id: chat_id, text: text }.merge!(args)
+      # opts = { parse_mode: :html, chat_id: chat_id, text: text }.merge!(args)
+      opts = { parse_mode: :html, chat_id: chat_id, text: text, disable_web_page_preview: true }.merge!(args)
       bot.api.send_message(opts)
     rescue StandardError => e
       log("Sending message is blocking by the user #{User.find_by(tg_id: user_id).debug_user_info}\n"\

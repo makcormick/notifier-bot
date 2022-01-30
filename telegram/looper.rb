@@ -36,29 +36,36 @@ class Looper
   end
 
   TRY_PERIOD = 1 # minutes
+  DELAY = 0.5
   THREAD_SLEEP_PERIOD = 5 # seconds
 
   @process_store = {}
 
-  attr_accessor :id, :next_iteration_time, :thread, :period
+  attr_accessor :id, :next_iteration_time, :thread, :period, :delay
 
   def initialize(id)
     @id = id
-    @next_iteration_time = Time.now
   end
 
-  def start(custom_period = TRY_PERIOD)
-    self.period = custom_period
+  def start(custom_period = TRY_PERIOD, delay: 0, abort_on_exception: true)
+    self.period = custom_period.minutes
+    self.delay = delay.minutes
+    self.next_iteration_time = Time.now + self.delay
     self.class.stop(id)
 
     self.class.process_store[id] = @thread = Thread.new do
+      sleep(@delay) if @delay.positive?
+
       loop do
-        next sleep(THREAD_SLEEP_PERIOD) if @next_iteration_time > Time.now
+        current_time = Time.now
+        next sleep(THREAD_SLEEP_PERIOD) if @next_iteration_time > current_time
 
         yield
 
-        @next_iteration_time += @period.minutes
+        @next_iteration_time = current_time + @period
       end
     end
+
+    @thread.abort_on_exception = abort_on_exception
   end
 end

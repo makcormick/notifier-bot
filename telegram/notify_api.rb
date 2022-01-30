@@ -66,7 +66,7 @@ class NotifyApi
         log "#{user.debug_user_info} pool_data request from cache"
 
         if cache.size > 100
-          log "Clearing cache #{format_time}"
+          log "Clearing cache #{format_time(o_time: true)}"
           self.cache = {}
         end
 

@@ -36,15 +36,15 @@ class BotRuner
         Transaction.deep_scan
       end
 
-      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT) do
+      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT, delay: 0.33) do
         puts
         Api::PoolInfo.fetch
         Api::Price::Gecko.price
       end
 
-      Looper.new(:notifier).start(Transaction::CHECK_TIMEOUT) do
+      Looper.new(:notifier).start(Transaction::SCAN_TIMEOUT, delay: 0.66) do
         puts
-        log("Check new solutions.. Memory 1-point #{GetProcessMem.new.mb}")
+        log("Check new solutions. Memory 1-point #{GetProcessMem.new.mb}")
         next unless (solutions = Transaction.check_last_solutions)
 
         center_log 'Start users notify'

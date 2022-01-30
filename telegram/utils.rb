@@ -5,11 +5,12 @@ module Utils
     time.ago_in_words.gsub(' ago', '')
   end
 
-  def format_time(time = Time.now, time_zone: nil)
+  def format_time(time = Time.now.in_time_zone(3), o_time: false, time_zone: nil)
+    t_format = o_time ? '%H:%M:%S' : '%H:%M:%S %d.%m.%Y (%z)'
     if time_zone
-      time.in_time_zone(time_zone).strftime('%H:%M:%S %d.%m.%Y (%z)')
+      time.in_time_zone(time_zone).strftime(t_format)
     else
-      time.strftime('%H:%M:%S %d.%m.%Y (%z)')
+      time.strftime(t_format)
     end
   end
 
@@ -81,11 +82,11 @@ module Utils
   end
 
   def center_log(text)
-    puts "#{format_time}: #{text}".center(90, '*')
+    puts "#{format_time(o_time: true)}: #{text}".center(90, '*')
   end
 
   def log(text)
-    puts("#{format_time}: #{text}")
+    puts("#{format_time(o_time: true)}: #{text}")
   end
 
   def mem_test

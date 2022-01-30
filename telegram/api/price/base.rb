@@ -6,15 +6,16 @@ module Api
       REQUEST_PRICE_TIMEOUT = 1
 
       class << self
-        attr_accessor :cached_price, :last_price_request_time
+        attr_accessor :cached_price, :next_price_request_time
 
         def price
-          return cached_price if cached_price && last_price_request_time && last_price_request_time > Time.now
+          return cached_price if cached_price && next_price_request_time && next_price_request_time > Time.now
 
-          set_new_last_price_request_time
+          set_new_next_price_request_time
 
-          puts "#{self} price next in #{last_price_request_time}"
           self.cached_price = request_price
+          log "#{self} price #{cached_price} next in #{format_time(next_price_request_time, o_time: true)}"
+          cached_price
         end
 
         def current_price
@@ -23,8 +24,8 @@ module Api
 
         private
 
-        def set_new_last_price_request_time
-          self.last_price_request_time = Time.now + REQUEST_PRICE_TIMEOUT.minutes
+        def set_new_next_price_request_time
+          self.next_price_request_time = Time.now + REQUEST_PRICE_TIMEOUT.minutes
         end
 
         def request_price

@@ -60,7 +60,7 @@ module HistoryStore
     current_time = Time.now
 
     if next_sync_time && next_sync_time > current_time
-      log("Waiting for reloading history. Next allowed at #{format_time(next_sync_time)}\n"\
+      log("Waiting for reloading history. Next allowed at #{format_time(next_sync_time, o_time: true)}\n"\
           "Next after: #{just_time(current_time - (next_sync_time - current_time))}")
       return
     end
