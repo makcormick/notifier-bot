@@ -8,41 +8,11 @@ module HistoryStore
   MAX_SCAN_LEVEL = 40
   SYNC_PERIOD_TIME = 0.9
 
-  def check_last_solutions
-    new_searched_solutions = get_new_solutions_from(Setting.last_transaction['hash'])
-    return if new_searched_solutions.blank?
-
-    solution = new_searched_solutions.last
-    Setting.last_transaction = solution
-    new_searched_solutions
-  end
-
   def resync
     destroy_all
     self.next_sync_time = nil
     deep_scan
     Setting.sync
-  end
-
-  def get_new_solutions_from(hash_of_last_transaction)
-    transaction = Transaction.find_by(t_hash: hash_of_last_transaction)
-    return [Transaction.first] if transaction.blank?
-
-    Transaction.where('time > ?', transaction.time).reverse
-  end
-
-  def real_24h_profit
-    solutions = last_24h_solutions
-    solutions_count = solutions.count
-    real_day_tons = (solutions_count * 100).to_f
-    average_pool_hashrate = solutions.joins(:pool).average('pools.hashrate').to_i
-    average_network_difficult = solutions.joins(:pool).average('pools.n_difficult').to_i
-    profit = real_day_tons / to_gh(average_pool_hashrate)
-    [average_pool_hashrate, average_network_difficult, real_day_tons, profit, solutions.last]
-  end
-
-  def last_24h_solutions
-    Transaction.where('time > ?', Time.now - 24.hours)
   end
 
   def last_day_solutions_from(from_time = Time.now.utc, time_zone: nil)

@@ -6,7 +6,8 @@ class NotifyApi
   class << self
     attr_accessor :cache
 
-    def last_giver_info(transaction = Setting.last_transaction, user: nil, time_zone: 0, real_24h_profit_data: [])
+    def last_giver_info(transaction = Setting.last_transaction, user: nil, time_zone: 0, real_24h_profit_data: [],
+                        locale: :en)
       t_time = transaction.is_a?(Transaction) ? transaction.time : transaction['timestamp']
       giver = transaction.is_a?(Transaction) ? transaction.giver : transaction['giver']
 
@@ -17,7 +18,7 @@ class NotifyApi
       last_day_solutions_count = Transaction.last_day_solutions_count_from(found_time)
 
       average_pool_hashrate, average_network_difficult, real_day_tons, profit,
-        solutions_last = real_24h_profit_data.presence || Transaction.real_24h_profit
+        solutions_last = real_24h_profit_data.presence || Service::RealProfit.new.perform
 
       real_day_tons_usd = real_day_tons * ton_price
       profit_usd = profit * ton_price
@@ -35,30 +36,31 @@ class NotifyApi
       real_day_tons_info = b(real_day_tons)
       real_day_tons_usd_info = b(real_day_tons_usd.round(2))
       expected_day_tons_info = b((expected_solutions_in_day * 100).round(2))
-      luck_state_info = b((user || I18n).t(real_day_tons > expected_day_tons ? 'lucky_day' : 'unlucky_day'))
+      luck_state_info = b(I18n.t(real_day_tons > expected_day_tons ? 'lucky_day' : 'unlucky_day', locale: locale))
       profit_info = b(profit.round(4))
       profit_usd_info = b(profit_usd.round(2))
       ton_price_info = b("#{ton_price.round(2)}$")
 
-      (user || I18n).t('last_solution_info',
-                       found_time_formatted: found_time_formatted,
-                       pool_wallet: HistoryStore::POOL_WALLET,
-                       giver_wallet: giver,
-                       last_day_solutions_count: last_day_solutions_count,
-                       expected_solutions_in_day_info: expected_solutions_in_day_info,
-                       solution_goal_info: solution_goal_info,
-                       start_time_info: start_time_info,
-                       start_time_words_info: start_time_words_info,
-                       average_network_difficult_info: average_network_difficult_info,
-                       average_network_difficult_th_info: average_network_difficult_th_info,
-                       average_pool_hashrate_info: average_pool_hashrate_info,
-                       real_day_tons_info: real_day_tons_info,
-                       real_day_tons_usd_info: real_day_tons_usd_info,
-                       expected_day_tons_info: expected_day_tons_info,
-                       luck_state_info: luck_state_info,
-                       profit_info: profit_info,
-                       profit_usd_info: profit_usd_info,
-                       ton_price_info: ton_price_info)
+      I18n.t('last_solution_info',
+             found_time_formatted: found_time_formatted,
+             pool_wallet: HistoryStore::POOL_WALLET,
+             giver_wallet: giver,
+             last_day_solutions_count: last_day_solutions_count,
+             expected_solutions_in_day_info: expected_solutions_in_day_info,
+             solution_goal_info: solution_goal_info,
+             start_time_info: start_time_info,
+             start_time_words_info: start_time_words_info,
+             average_network_difficult_info: average_network_difficult_info,
+             average_network_difficult_th_info: average_network_difficult_th_info,
+             average_pool_hashrate_info: average_pool_hashrate_info,
+             real_day_tons_info: real_day_tons_info,
+             real_day_tons_usd_info: real_day_tons_usd_info,
+             expected_day_tons_info: expected_day_tons_info,
+             luck_state_info: luck_state_info,
+             profit_info: profit_info,
+             profit_usd_info: profit_usd_info,
+             ton_price_info: ton_price_info,
+             locale: locale)
     end
 
     def pool_data(user)

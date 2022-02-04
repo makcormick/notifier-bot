@@ -45,39 +45,42 @@ class BotRuner
       Looper.new(:notifier).start(Transaction::SCAN_TIMEOUT, delay: 0.66) do
         puts
         log("Check new solutions. Memory 1-point #{GetProcessMem.new.mb}")
-        next unless (solutions = Transaction.check_last_solutions)
+        next unless (solutions = Service::CheckLastSolutions.new.perform)
 
         center_log 'Start users notify'
         log "Ton price #{Api::Price::Gecko.current_price}"
         log("Memory 2-point #{GetProcessMem.new.mb}")
-        real_24h_profit_data = Transaction.real_24h_profit
+        real_profit_service = Service::RealProfit.new
+        real_profit_service.perform
 
         solutions.each do |solution|
-          text = NotifyApi.last_giver_info(solution, time_zone: 3, real_24h_profit_data: real_24h_profit_data)
           puts('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> New Solution')
-          log text
+          log(NotifyApi.last_giver_info(solution, time_zone: 3, real_24h_profit_data: real_profit_service.store))
           puts('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         end
 
         log("Memory 3-point #{GetProcessMem.new.mb}")
-        User.notified.find_in_batches(batch_size: 10) do |users|
+        User.notified.in_batches(of: 10) do |relation|
           log("Memory 4-point start #{GetProcessMem.new.mb}")
           threads = []
-          users.each do |user|
+          relation.pluck(:tg_id, :chat_id, :time_zone, :locale).each do |tg_id, chat_id, time_zone, locale|
             threads << Thread.new do
               solutions.each do |solution|
                 ms_time = Benchmark.realtime do
-                  text = NotifyApi.last_giver_info(solution, user: user, real_24h_profit_data: real_24h_profit_data)
-                  Sender.send_message(user.tg_id, user.chat_id, text)
+                  text = NotifyApi.last_giver_info(solution, time_zone: time_zone,
+                                                             real_24h_profit_data: real_profit_service.store,
+                                                             locale: locale)
+                  Sender.send_message(tg_id, chat_id, text)
+                  # UserNotifierJob.perform_later(tg_id, chat_id, text)
                 end
 
-                log "User notified #{user.tg_id} with #{ms_time} seconds"
+                log "User notified #{tg_id} with #{ms_time} seconds"
               end
             end
           end
           threads.each(&:join)
           log("Memory 4-point end #{GetProcessMem.new.mb}")
-          log("Sended for #{users.count} users")
+          log("Sended for #{relation.count} users")
           sleep(0.3)
         end
 
