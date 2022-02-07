@@ -64,25 +64,15 @@ class BotRuner
         log("Memory 3-point #{GetProcessMem.new.mb}")
         User.notified.find_in_batches(batch_size: 10) do |users|
           log("Memory 4-point start #{GetProcessMem.new.mb}")
-          # threads = []
 
           users.each do |user|
-            # threads << Thread.new do
             solutions.each do |solution|
-              ms_time = Benchmark.realtime do
-                text = NotifyApi.last_giver_info(solution, time_zone: user.time_zone, locale: user.locale,
-                                                           real_24h_profit_data: real_profit_service.store,
-                                                           last_day_solutions_service: last_day_solutions_service)
-                # Sender.send_message(user.tg_id, user.chat_id, text)
-                UserNotifierJob.perform_later(user.tg_id, user.chat_id, text)
-              end
-
-              log "User notified #{user.debug_user_info} with #{ms_time} seconds"
+              text = NotifyApi.last_giver_info(solution, time_zone: user.time_zone, locale: user.locale,
+                                                         real_24h_profit_data: real_profit_service.store,
+                                                         last_day_solutions_service: last_day_solutions_service)
+              UserNotifierJob.perform_later(user.tg_id, user.chat_id, text)
             end
-            # end
           end
-
-          # threads.each(&:join)
 
           log("Memory 4-point end #{GetProcessMem.new.mb}")
           log("Sended for #{users.count} users")
