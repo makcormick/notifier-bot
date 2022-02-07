@@ -15,15 +15,6 @@ module HistoryStore
     Setting.sync
   end
 
-  def last_day_solutions_from(from_time = Time.now.utc, time_zone: nil)
-    time = time_zone ? from_time.in_time_zone(time_zone) : from_time
-    Transaction.where('time >= ? AND time <= ?', time.beginning_of_day, time)
-  end
-
-  def last_day_solutions_count_from(from_time = Time.now.utc, time_zone: nil)
-    last_day_solutions_from(from_time, time_zone: time_zone).count
-  end
-
   def deep_scan(next_page_url = nil, level = 1)
     @trans_cache = [] if level == 1
 

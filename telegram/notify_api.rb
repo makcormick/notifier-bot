@@ -7,7 +7,7 @@ class NotifyApi
     attr_accessor :cache
 
     def last_giver_info(transaction = Setting.last_transaction, user: nil, time_zone: 0, real_24h_profit_data: [],
-                        locale: :en)
+                        locale: :en, last_day_solutions_service: Service::LastDaySolutions.new)
       t_time = transaction.is_a?(Transaction) ? transaction.time : transaction['timestamp']
       giver = transaction.is_a?(Transaction) ? transaction.giver : transaction['giver']
 
@@ -15,7 +15,7 @@ class NotifyApi
       timestamp = t_time
       found_time = timestamp.in_time_zone(tz)
       found_time_formatted = format_time(timestamp, time_zone: tz)
-      last_day_solutions_count = Transaction.last_day_solutions_count_from(found_time)
+      last_day_solutions_count = last_day_solutions_service.count(found_time)
 
       average_pool_hashrate, average_network_difficult, real_day_tons, profit,
         solutions_last = real_24h_profit_data.presence || Service::RealProfit.new.perform

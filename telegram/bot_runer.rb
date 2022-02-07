@@ -31,15 +31,15 @@ class BotRuner
       Sender.bot = bot
       ReplyPool.bot = bot
 
-      Looper.new(:transaction_data).start(Transaction::SCAN_TIMEOUT) do
-        puts
-        Transaction.deep_scan
-      end
-
-      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT, delay: 0.33) do
+      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT) do
         puts
         Api::PoolInfo.fetch
         Api::Price::Gecko.price
+      end
+
+      Looper.new(:transaction_data).start(Transaction::SCAN_TIMEOUT, delay: 0.33) do
+        puts
+        Transaction.deep_scan
       end
 
       Looper.new(:notifier).start(Transaction::SCAN_TIMEOUT, delay: 0.66) do
@@ -52,35 +52,40 @@ class BotRuner
         log("Memory 2-point #{GetProcessMem.new.mb}")
         real_profit_service = Service::RealProfit.new
         real_profit_service.perform
+        last_day_solutions_service = Service::LastDaySolutions.new
 
         solutions.each do |solution|
           puts('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> New Solution')
-          log(NotifyApi.last_giver_info(solution, time_zone: 3, real_24h_profit_data: real_profit_service.store))
+          log(NotifyApi.last_giver_info(solution, time_zone: 3, real_24h_profit_data: real_profit_service.store,
+                                                  last_day_solutions_service: last_day_solutions_service))
           puts('<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<')
         end
 
         log("Memory 3-point #{GetProcessMem.new.mb}")
-        User.notified.in_batches(of: 10) do |relation|
+        User.notified.find_in_batches(batch_size: 10) do |users|
           log("Memory 4-point start #{GetProcessMem.new.mb}")
           threads = []
-          relation.pluck(:tg_id, :chat_id, :time_zone, :locale).each do |tg_id, chat_id, time_zone, locale|
+
+          users.each do |user|
             threads << Thread.new do
               solutions.each do |solution|
                 ms_time = Benchmark.realtime do
-                  text = NotifyApi.last_giver_info(solution, time_zone: time_zone,
+                  text = NotifyApi.last_giver_info(solution, time_zone: user.time_zone, locale: user.locale,
                                                              real_24h_profit_data: real_profit_service.store,
-                                                             locale: locale)
-                  Sender.send_message(tg_id, chat_id, text)
-                  # UserNotifierJob.perform_later(tg_id, chat_id, text)
+                                                             last_day_solutions_service: last_day_solutions_service)
+                  # Sender.send_message(user.tg_id, user.chat_id, text)
+                  UserNotifierJob.perform_later(user.tg_id, user.chat_id, text)
                 end
 
-                log "User notified #{tg_id} with #{ms_time} seconds"
+                log "User notified #{user.debug_user_info} with #{ms_time} seconds"
               end
             end
           end
+
           threads.each(&:join)
+
           log("Memory 4-point end #{GetProcessMem.new.mb}")
-          log("Sended for #{relation.count} users")
+          log("Sended for #{users.count} users")
           sleep(0.3)
         end
 

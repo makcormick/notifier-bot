@@ -16,10 +16,10 @@ module Service
     private
 
     def get_new_solutions_from(hash_of_last_transaction)
-      transaction = Transaction.find_by(t_hash: hash_of_last_transaction)
-      return [Transaction.first] if transaction.blank?
+      time = Transaction.where(t_hash: hash_of_last_transaction).select(:time).take&.time
+      return [Transaction.first] if time.blank?
 
-      Transaction.where('time > ?', transaction.time).reverse
+      Transaction.where('time > ?', time).reverse
     end
   end
 end
