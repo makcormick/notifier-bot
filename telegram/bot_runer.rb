@@ -31,18 +31,18 @@ class BotRuner
       Sender.bot = bot
       ReplyPool.bot = bot
 
-      Looper.new(:pool_fetcher).start(Api::PoolInfo::REQUEST_POOL_TIMEOUT) do
+      Looper.new(:pool_fetcher).start(Pool::POOL_TIMEOUT) do
         puts
         Api::PoolInfo.fetch
         Api::Price::Gecko.price
       end
 
-      Looper.new(:transaction_data).start(Transaction::SCAN_TIMEOUT, delay: 0.33) do
+      Looper.new(:transaction_data).start(Transaction::SCAN_TIMEOUT, sec: 20) do
         puts
         Transaction.deep_scan
       end
 
-      Looper.new(:notifier).start(Transaction::SCAN_TIMEOUT, delay: 0.66) do
+      Looper.new(:notifier).start(Transaction::SCAN_TIMEOUT, sec: 40) do
         puts
         log("Check new solutions. Memory 1-point #{GetProcessMem.new.mb}")
         next unless (solutions = Service::CheckLastSolutions.new.perform)

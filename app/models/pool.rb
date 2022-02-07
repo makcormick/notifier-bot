@@ -3,6 +3,7 @@
 class Pool < ApplicationRecord
   has_many :transactions
 
+  POOL_TIMEOUT = 2
   SOLUTION_REWARD = 100
   COMISSION = 0
 

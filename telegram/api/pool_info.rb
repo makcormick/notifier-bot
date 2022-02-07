@@ -3,7 +3,7 @@
 module Api
   class PoolInfo
     POOL_INFO_URL = 'https://pplns.toncoinpool.io/api/v1/public/network'
-    REQUEST_POOL_TIMEOUT = 2
+    REQUEST_POOL_TIMEOUT = 1
 
     class << self
       attr_accessor :cache, :last_request_time
