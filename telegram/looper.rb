@@ -62,7 +62,7 @@ class Looper
 
         yield
 
-        @next_iteration_time = current_time + @period
+        @next_iteration_time += @period while @next_iteration_time < current_time
       end
     end
 

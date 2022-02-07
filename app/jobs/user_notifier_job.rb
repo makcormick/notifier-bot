@@ -5,6 +5,5 @@ class UserNotifierJob < ApplicationJob
 
   def perform(tg_id, chat_id, text)
     Sender.send_message(tg_id, chat_id, text)
-    log "User notified #{tg_id}"
   end
 end
