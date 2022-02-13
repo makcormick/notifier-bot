@@ -117,7 +117,7 @@ class BotRuner
                 sender.send_message(user.t('start_notify'), with_replacing: true)
               else
                 sender.send_message(user.t('already_notify'))
-                sender.send_message(NotifyApi.last_giver_info(user: user), with_replacing: true)
+                sender.send_message(NotifyApi.last_giver_info(user: user, locale: user.locale), with_replacing: true)
               end
             when user.t('notify_off'), '/notify_off'
               Looper.remove_user(user)

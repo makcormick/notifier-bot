@@ -103,13 +103,8 @@ class Sender
   end
 
   def default_response(text = user.t('main_menu'), with_replacing: true)
-    # kb = [
-    #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('wallet_data'))],
-    #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('pool_data'))],
-    #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('profit_calculating'))],
-    #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('settings'))]
-    # ]
     kb = [
+      #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('wallet_data'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('pool_data'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('profit_calculating'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('settings'))]

@@ -38,10 +38,9 @@ module Api
         text << b(wallet)
         text << "Current pool hashrate: #{b(current_pool_hashrate)} Th/s"
         text << "Current network difficult: #{b(network_difficult)} PH"
-        time_passed = ((Time.now.utc - Time.parse(data_net.last_solved_time)) / 3600)
-        last_challenge_solved = Time.parse(data_net.last_solved_time)
-        text << "Last Block: #{b(format_time(last_challenge_solved, time_zone: 3))} UTC "\
-                "(#{b(last_challenge_solved.ago_in_words)})"
+        time_passed = ((Time.now.utc - data_net.last_solved_time) / 3600)
+        text << "Last Block: #{b(format_time(data_net.last_solved_time, time_zone: 3))} UTC "\
+                "(#{b(data_net.last_solved_time.ago_in_words)})"
 
         hours_for_solution = network_difficulty / pool_hashrate / 3600 # hours for solution
         solution_in_day = (24 / hours_for_solution)
@@ -53,32 +52,39 @@ module Api
         text << "Current solution luck: #{b(current_luck)}%"
         text << "\n"
 
-        url = "https://pplns.toncoinpool.io/api/v1/public/miners/#{wallet}"
+        url = "https://toncoinpool.io/api/v1/public/miners/#{wallet}"
         data_min = request_json(url, log_text: '|wallet|')
-        partition = data_min['part'] / 100
+        partition = data_min['part'].to_f / 100
         max_for_name = data_min['rigs'].map { _1['name'] }.max_by(&:size)&.size || 7
         text << 'Rig information'
+        total_hashrate = 0
 
         data_min['rigs'].each do |rig|
-          shares = rig['shares'].map { |k, v| "#{just(k, 6)}: #{just(b(v), 7)}" }.join(' | ')
-          worker = rig['name'].ljust(max_for_name, ' ') +
-                   " ---> #{b((rig['hashrate'].to_f / 1_000_000_000).round(2))} Gh/s"
+          accepted_shares = rig['buckets'].map(&:first)
+          staled_shares = rig['buckets'].map(&:second)
+          staled_duplicated = rig['buckets'].map(&:third)
+
+          rig_hashrate = Service::PoolHashrate.new(accepted_shares).perform
+          total_hashrate += rig_hashrate
+
+          shares = { accepted: accepted_shares.sum, staled: staled_shares.sum, duplicated: staled_duplicated.sum }
+                   .map { |k, v| "#{just(k, 6)}: #{just(b(v), 7)}" }.join(' | ')
+          worker = rig['name'].ljust(max_for_name, ' ') + " ---> #{b(to_gh(rig_hashrate).round(2))} Gh/s"
           text << worker
           text << shares
         end
 
         text << "\n"
-        my_hashrate = (data_min['rigs'].map { _1['hashrate'].to_f }.sum).round(2)
-        text << "Total miner hashrate: #{b((data_min['rigs'].map { _1['hashrate'].to_f }.sum / (10**9)).round(2))} GH/s"
+        text << "Total miner hashrate: #{b(to_gh(total_hashrate).round(2))} GH/s"
 
-        effective_hashrate = to_gh(pool_hashrate * partition)
-        text << "Miner effective hashrate on pool: #{b(effective_hashrate.round(2))} GH/s"
+        # effective_hashrate = to_gh(pool_hashrate * partition)
+        # text << "Miner effective hashrate on pool: #{b(effective_hashrate.round(2))} GH/s"
 
-        balance = data_min['balance'].to_f / (10**9)
-        expected_prev_balance = balance - (data_min['part'] * 1)
+        balance = data_min['balance'].to_f / 10**9
+        expected_prev_balance = balance - (partition * 1)
         text << "Miner balance: #{b(balance)} tons (previous #{b(expected_prev_balance.round(5))})"
         text << "Miner's PPLNS Shares partition: #{b(data_min['part'])}%"
-        text << "Expected partition: #{b((my_hashrate / pool_hashrate * 100).round(4))}%"
+        text << "Expected partition: #{b((total_hashrate / pool_hashrate * 100).round(4))}%"
 
         expected_miner_profit = expected_miner_profit(solution_in_day, partition).round(4)
         expected_profit_for_gh = expected_profit_for_gh(solution_in_day, pool_hashrate).round(4)

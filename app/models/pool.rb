@@ -1,11 +1,13 @@
 # frozen_string_literal: true
 
 class Pool < ApplicationRecord
+  serialize :total_shares, Array
   has_many :transactions
 
   POOL_TIMEOUT = 2
   SOLUTION_REWARD = 100
   COMISSION = 0
+  SHARE_DIFF = 200
 
   class << self
     def last_pool_data
@@ -13,11 +15,12 @@ class Pool < ApplicationRecord
     end
 
     def from_data(data)
-      create(hashrate: data.fetch('poolHashrate'),
+      create(hashrate: Service::PoolHashrate.new(data['totalShares']).perform,
              n_difficult: data.fetch('networkDifficulty'),
              last_sol_seq: data['lastBlockSeqno'],
              last_solved_time: Time.parse(data['lastChallengeSolved']),
-             total_miners: data['totalMiners'])
+             total_miners: data['totalMiners'],
+             total_shares: data['totalShares'])
     end
 
     def clear_reward
