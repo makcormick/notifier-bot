@@ -3,7 +3,7 @@
 module HistoryStore
   attr_accessor :next_sync_time, :trans_cache
 
-  TRANS_BASE = 'https://api.ton.sh/getTransactions'
+  TRANS_BASE = 'https://toncenter.com/api/v2/getTransactions'
   POOL_WALLET = 'EQCUp88072pLUGNQCXXXDFJM3C5v9GXTjV7ou33Mj3r0Xv2W'
   MAX_SCAN_LEVEL = 40
   SYNC_PERIOD_TIME = 0.9
@@ -44,8 +44,9 @@ module HistoryStore
     end
 
     first_transaction = Transaction.first
-    @trans_cache += trans['result'].select { _1['received']['nanoton'] == 10**11 }
-    index_of_transaction = @trans_cache.index(@trans_cache.find { _1['hash'] == first_transaction&.t_hash })
+    @trans_cache += trans['result'].select { _1['in_msg']['value'].to_i == 10**11 }
+    index_of_transaction = @trans_cache.index(@trans_cache
+      .find { _1.dig('transaction_id', 'hash') == first_transaction&.t_hash })
 
     if index_of_transaction
       log("End scan #{first_transaction.t_hash}")
@@ -58,7 +59,7 @@ module HistoryStore
     end
 
     uri = URI(TRANS_BASE)
-    uri.query = URI.encode_www_form(trans['previous_transaction'].merge(address: POOL_WALLET))
+    uri.query = URI.encode_www_form(@trans_cache.last['transaction_id'].slice('lt', 'hash').merge(address: POOL_WALLET))
     next_url = uri.to_s
 
     deep_scan(next_url, level + 1)

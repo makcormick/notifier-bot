@@ -104,7 +104,7 @@ class Sender
 
   def default_response(text = user.t('main_menu'), with_replacing: true)
     kb = [
-      #   [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('wallet_data'))],
+      [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('wallet_data'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('pool_data'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('profit_calculating'))],
       [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('settings'))]
@@ -118,7 +118,7 @@ class Sender
            Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('notify_off'))],
           [Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('change_time_zone')),
            Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('switch_language'))],
-          # Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('set_wallet')),
+          Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('set_wallet')),
           Telegram::Bot::Types::InlineKeyboardButton.new(text: user.t('back_to_main_menu'))]
     markup = Telegram::Bot::Types::ReplyKeyboardMarkup.new(keyboard: kb, resize_keyboard: true)
     send_message(text, with_replacing: with_replacing, reply_markup: markup)

@@ -3,8 +3,8 @@
 =begin
 BotFather command for mobile
 wallet_data - Wallet data
-set_wallet - Set wallet
 pool_data - Pool data
+set_wallet - Set wallet
 profit_calculating - Profit calculating
 notify_on - Notify On
 notify_off - Notify Off
@@ -129,12 +129,12 @@ class BotRuner
             when user.t('set_wallet'), '/set_wallet'
               sender.with_keyboard_close(user.t('type_wallet'))
               ReplyPool.new(user).set_wallet
-            # when user.t('wallet_data'), '/wallet_data'
-            #   if user.wallet
-            #     sender.send_message(Api::WalletData.perform(user.wallet), with_replacing: true)
-            #   else
-            #     sender.default_response(user.t('add_wallet_in_settings'))
-            #   end
+            when user.t('wallet_data'), '/wallet_data'
+              if user.wallet
+                sender.send_message(Api::WalletData.perform(user.wallet), with_replacing: true)
+              else
+                sender.default_response(user.t('add_wallet_in_settings'))
+              end
             when user.t('settings')
               sender.settings_response
             when user.t('profit_calculating'), '/profit_calculating'
